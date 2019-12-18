@@ -1,0 +1,39 @@
+     1                                  bits 32 ; assembling for the 32 bits architecture
+     2                                  
+     3                                  ; declare the EntryPoint (a label defining the very first instruction of the program)
+     4                                  global start        
+     5                                  
+     6                                  ; declare external functions needed by our program
+     7                                  extern exit               ; tell nasm that exit exists even if we won't be defining it
+     8                                  import exit msvcrt.dll    ; exit is a function that ends the calling process. It is defined in msvcrt.dll
+     9                                                            ; msvcrt.dll contains exit, printf and all the other important C-runtime specific functions
+    10                                  
+    11                                  ; our data is declared here (the variables needed by our program)
+    12                                  segment data use32 class=data
+    13                                      ; ...
+    14 00000000 39302A51F411                s dw 12345, 20778, 4596
+    15                                      len equ ($-s)/2
+    16 00000006 00<rept>                    d times len*10 db 0
+    17 00000024 0A                          z db 10
+    18                                  ; our code starts here
+    19                                  segment code use32 class=code
+    20                                      start:
+    21                                          ; Task: take digits from an array of words and memorize them as bytes
+    22 00000000 B903000000                      mov ecx, len
+    23 00000005 BE00000000                      mov esi, 0
+    24 0000000A BF00000000                      mov edi, 0
+    25 0000000F 66BB0A00                        mov bx, 10
+    26                                          myRepeat:
+    27 00000013 668B86[00000000]                    mov ax, [s+esi] ; I take the number
+    28                                              myLoop:
+    29 0000001A 66BA0000                                mov dx, 0 ; convert AX to DX:AX
+    30 0000001E 66F7F3                                  div bx ; DX - DX:AX%10, AX - DX:AX/10                                            
+    31 00000021 8897[06000000]                          mov [d+edi], dl ; move the last digit to the new array                    
+    32 00000027 83C701                                  add edi, 1 ; increment the new array index                              
+    33 0000002A 6683F800                                cmp AX, 0                                                                          
+    34 0000002E 77EA                                    ja myLoop ; if AX > 0, we have at least one more digit
+    35 00000030 83C602                              add esi, 2 ; go to the next word
+    36 00000033 E2DE                            loop myRepeat
+    37                                          ; exit(0)
+    38 00000035 6A00                            push    dword 0      ; push the parameter for exit onto the stack
+    39 00000037 FF15[00000000]                  call    [exit]       ; call exit to terminate the program
